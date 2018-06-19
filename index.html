@@ -229,6 +229,153 @@
   
   
   <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/19/Java高编译低运行错误-ConcurrentHashMap-keySet/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Liukeyu">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Liukeyu's Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">
+                
+                <a class="post-title-link" href="/2018/06/19/Java高编译低运行错误-ConcurrentHashMap-keySet/" itemprop="url">Java高编译低运行错误(ConcurrentHashMap.keySet)</a></h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">Posted on</span>
+              
+              <time title="Post created" itemprop="dateCreated datePublished" datetime="2018-06-19T11:13:37+08:00">
+                2018-06-19
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        
+          
+            <h5 id="问题"><a href="#问题" class="headerlink" title="问题"></a>问题</h5><p>mds-cache 在有些机器会出现清空数据失败的问题，不抛出任何错误，本机无法重现。</p>
+<h5 id="定位问题"><a href="#定位问题" class="headerlink" title="定位问题"></a>定位问题</h5><p>由于不抛出任何错误，只能增加日志， 最终定位到调用ConcurrentHashMap.keySet()方法卡死</p>
+<p>对比出现问题的机器与没有问题的机器，发现出问题的机器JDK版本是1.7， 而没有问题的JDK版本是1.8</p>
+<p>基本可以确定是由于keySet() 方法与JDK 版本不一致导致的问题</p>
+<p>但是我本机pom.xml中已经指定language level 为1.7：</p>
+<pre><code>&lt;plugin&gt;
+&lt;groupId&gt;org.apache.maven.plugins&lt;/groupId&gt;
+&lt;artifactId&gt;maven-compiler-plugin&lt;/artifactId&gt;
+&lt;version&gt;3.1&lt;/version&gt;
+&lt;configuration&gt;
+&lt;source&gt;1.7&lt;/source&gt;
+&lt;target&gt;1.7&lt;/target&gt;
+&lt;/configuration&gt;
+&lt;/plugin&gt;
+</code></pre><p>按理应该不会出现版本不一问题</p>
+<p>然后网上看到<a href="https://www.jianshu.com/p/f4996b1ccf2f" title="这篇文章" target="_blank" rel="noopener">这篇文章</a></p>
+<p>得到结论与解决方法</p>
+<blockquote>
+<p>在javac指定了这些参数，降低版本号来编译，会导致生成class文件被标识为较低版本以供指定的JVM加载。但是，基于JDK 8的bootstrap class编译而成的keySet()方法，其返回值依旧是JDK 8中ConcurrentHashMap$KeySetView这个新增内部类。运行时，1.7的JVM尝试加载这个class文件，一定找不到KeySetView作为返回值的keySet()方法，出错。</p>
+</blockquote>
+<h5 id="解决方式"><a href="#解决方式" class="headerlink" title="解决方式"></a>解决方式</h5><p>使用父类/接口替换子类，即ConcurrentMap替换ConcurrentHashMap声明</p>
+<p>即使用<code>ConcurrentMap map = new ConcurrentHashMap()</code>替换 <code>ConcurrentHashMap map = new ConcurrentHashMap()</code></p>
+<h5 id="结论"><a href="#结论" class="headerlink" title="结论"></a>结论</h5><ul>
+<li><p>保证编译、打包环境和最终部署环境JDK版本的一致性</p>
+</li>
+<li><p>如果无法保证，就尽量面向接口编程，尤其是JDK中提供的类。原因是接口不易改变，而实现类遵循“宽收严发”原则，方法的入参和出参都是易变的。</p>
+</li>
+</ul>
+
+          
+        
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+
+      
+
+      
+
+      
+      
+        <div class="post-eof"></div>
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+    
+      
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
     <link itemprop="mainEntityOfPage" href="http://yoursite.com/2018/06/11/hello-world/">
 
     <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
@@ -390,7 +537,7 @@
               
                 <a href="/archives/">
               
-                  <span class="site-state-item-count">1</span>
+                  <span class="site-state-item-count">2</span>
                   <span class="site-state-item-name">posts</span>
                 </a>
               </div>
